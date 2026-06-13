@@ -12,11 +12,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.post('/api/chat', (req, res) => {
   const API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!API_KEY) {
-    res.status(500).json({ error: 'API key not configured' });
-    return;
+    console.error('ANTHROPIC_API_KEY не задан');
+    return res.status(500).json({ error: { message: 'API key not configured on server' } });
   }
 
   const body = JSON.stringify(req.body);
+
   const options = {
     hostname: 'api.anthropic.com',
     path: '/v1/messages',
@@ -33,23 +34,30 @@ app.post('/api/chat', (req, res) => {
     let d = '';
     resp.on('data', c => d += c);
     resp.on('end', () => {
+      // Логируем ошибки от Anthropic в консоль Render
+      if (resp.statusCode !== 200) {
+        console.error('Anthropic error', resp.statusCode, d);
+      }
       res.writeHead(resp.statusCode, { 'Content-Type': 'application/json' });
       res.end(d);
     });
   });
 
   r.on('error', (e) => {
-    res.status(500).json({ error: e.message });
+    console.error('Request error:', e.message);
+    res.status(500).json({ error: { message: e.message } });
   });
 
   r.write(body);
   r.end();
 });
-app.get('/', (req, res) => {
+
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Вера запущена на порту ${PORT}`);
+  console.log('API_KEY задан:', !!process.env.ANTHROPIC_API_KEY);
 });
