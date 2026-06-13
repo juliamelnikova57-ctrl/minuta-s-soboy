@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -45,7 +44,7 @@
 
   .topbar-logo {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 400;
     letter-spacing: .15em;
     color: var(--text);
@@ -387,11 +386,11 @@
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn active" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn" onclick="showScreen('history')">История</button>
+      <button class="nav-btn secondary" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
   <div class="home-body" id="home-body">
-    <div class="loading-text">Вера думает о слове для тебя...</div>
+    
   </div>
 </div>
 
@@ -419,7 +418,7 @@
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn active" onclick="showScreen('history')">История</button>
+      <button class="nav-btn active" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
   <div class="history-body" id="history-body"></div>
@@ -546,7 +545,7 @@ function renderHome() {
   document.getElementById('home-body').innerHTML = `
     <div class="fadein" style="display:flex;flex-direction:column;align-items:center;width:100%;text-align:center">
       <div class="word-label">${todayData.date || 'Сегодня'}</div>
-      <div class="word-of-day">${todayData.word}</div>
+      <div class="word-of-day">${todayData.word.charAt(0).toUpperCase() + todayData.word.slice(1)}</div>
       <div class="nature-text">${todayData.nature}</div>
       <div class="divider"></div>
       <div class="question-text">${todayData.question}</div>
@@ -751,6 +750,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
