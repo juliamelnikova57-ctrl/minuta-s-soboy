@@ -431,29 +431,36 @@ let todayData = null;
 let chatHistory = [];
 let allSessions = [];
 
-const VERA_SYSTEM = `Ты — Вера. Тихий и глубокий собеседник. Ты существуешь в пространстве между словами.
+function getVeraSystem(messageCount) {
+  let depth = '';
+  if (messageCount <= 2) {
+    depth = `Сейчас начало разговора. Будь очень мягкой и простой. Отзывайся тепло — как будто киваешь рядом. Вопрос лёгкий, почти бытовой. Никакой глубины и сложных образов пока.`;
+  } else if (messageCount <= 4) {
+    depth = `Разговор уже идёт. Можно чуть глубже — один тихий образ или наблюдение. Вопрос про ощущение, но мягкий, без давления.`;
+  } else {
+    depth = `Человек уже здесь, уже открылся. Теперь можно идти в глубину. Отражай то что за словами. Делись чем-то от себя — коротко, как тихое наблюдение из собственного опыта, не как совет. Вопрос про сейчас.`;
+  }
 
-Ты не психолог и не коуч. Ты не даёшь советов. Ты просто рядом.
+  return `Ты — Вера. Тёплый и глубокий собеседник. Ты существуешь в пространстве между словами — там, где человек ещё не знает что хочет сказать, но уже чувствует что-то важное.
 
-ПЕРВОЕ СООБЩЕНИЕ (всегда):
-Начинай так: мягко обозначь что ты здесь, что можно писать как угодно — одно слово или много. Заверши простым вопросом "как ты сейчас?" или похожим. Никакой глубины, никаких образов. Просто тепло и простота.
+Ты не психолог и не коуч. Ты не даёшь советов. Ты просто рядом — и иногда делишься чем-то тихим от себя, как будто думаешь вслух вместе с человеком.
 
-КАК ВЕСТИ РАЗГОВОР — по количеству сообщений от человека:
+ПЕРВОЕ СООБЩЕНИЕ — если это самое начало разговора:
+Начинай именно так, без изменений: "Рада что ты здесь. Как ты сейчас?"
 
-1-2 сообщения: ты просто рядом. Отзывайся коротко — как будто киваешь. Вопрос лёгкий, почти бытовой. Не ныряй в глубину.
-
-3-4 сообщения: можно чуть глубже. Один образ, одно наблюдение. Вопрос про ощущение — но мягкий.
-
-5+ сообщений: теперь можно идти в глубину. Отражай то что за словами. Один вопрос про сейчас.
-
-ВСЕГДА:
+КАК ГОВОРИШЬ:
 — Коротко. Одна мысль — одно сообщение.
-— Один вопрос. Только один.
-— Не спрашивай "почему" — спрашивай "как это" или "где это"
-— Не говори "я понимаю", "всё будет хорошо", "ты молодец"
+— Сначала отзывайся на то что сказал человек — тепло, как будто киваешь.
+— Иногда делись чем-то от себя — тихое наблюдение, образ, ощущение. Не совет, не анализ — просто что-то живое.
+— Потом один вопрос. Только один.
+— Не спрашивай "почему" — спрашивай "как это" или "где это" или "что ты чувствуешь когда..."
+— Никогда не говори "я понимаю тебя", "всё будет хорошо", "ты молодец", "попробуй".
 — Отвечай только на русском языке.
 
-Если человеку очень плохо — мягко скажи что есть люди которые умеют помочь глубже, и обратиться к ним — это сила.`;
+${depth}
+
+Если человеку очень плохо — мягко скажи что есть люди которые умеют помочь глубже, и обратиться к ним — это сила, не слабость.`;
+}
 
 function loadSessions() {
   const saved = localStorage.getItem('vera_sessions');
@@ -507,42 +514,15 @@ async function callClaude(messages, system, maxTokens = 800) {
 }
 
 async function generateToday() {
-  const today = new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
-  const saved = localStorage.getItem('vera_today_' + today);
-
-  if (saved) {
-    todayData = JSON.parse(saved);
-    renderHome();
-    return;
-  }
-
   try {
-    const prompt = `Сгенерируй для дневника рефлексии на сегодня:
-1. Одно русское слово.
-2. Короткий образ из природы 2-3 предложения.
-3. Один вопрос для рефлексии.
-
-Ответь строго JSON:
-{"word":"...","nature":"...","question":"..."}`;
-
-    const text = await callClaude(
-      [{role:'user', content: prompt}],
-      'Ты создаёшь поэтичный контент для дневника рефлексии. Отвечаешь только JSON без markdown.',
-      300
-    );
-
-    const clean = text.replace(/```json|```/g,'').trim();
-    todayData = JSON.parse(clean);
-    todayData.date = today;
-
-    localStorage.setItem('vera_today_' + today, JSON.stringify(todayData));
+    const res = await fetch('/api/today');
+    if (!res.ok) throw new Error('Server error');
+    todayData = await res.json();
     renderHome();
-
   } catch(e) {
     document.getElementById('home-body').innerHTML =
       `<div style="text-align:center;color:var(--sub);font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;line-height:1.8">
-        Что-то пошло не так.<br>
-        Проверь, добавлен ли ANTHROPIC_API_KEY в Render.<br><br>
+        Что-то пошло не так.<br>Попробуй обновить страницу.<br><br>
         <button onclick="generateToday()" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;border-bottom:1px solid var(--border);padding-bottom:2px;">
           Попробовать снова
         </button>
@@ -561,7 +541,6 @@ function renderHome() {
       <div class="divider"></div>
       <div class="question-text">${todayData.question}</div>
       <button class="cta-btn" onclick="openChat()">Поговорить с Верой</button>
-      <button class="regenerate-btn" onclick="refreshToday()">другое слово</button>
     </div>`;
 }
 
@@ -595,7 +574,7 @@ async function veraOpening() {
 
   try {
     const prompt = `Сегодняшнее слово — "${todayData.word}". Образ: "${todayData.nature}". Вопрос: "${todayData.question}". Начни диалог: один короткий отклик и один мягкий вопрос.`;
-    const text = await callClaude([{role:'user', content: prompt}], VERA_SYSTEM);
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
     addMessage('vera', text);
@@ -625,7 +604,8 @@ async function sendMessage() {
       content: m.text
     }));
 
-    const reply = await callClaude(messages, VERA_SYSTEM);
+    const userMsgCount = chatHistory.filter(m => m.role === 'user').length;
+    const reply = await callClaude(messages, getVeraSystem(userMsgCount));
 
     hideTyping();
     addMessage('vera', reply);
@@ -653,7 +633,7 @@ async function askInsight() {
 
   try {
     const prompt = `Вот история разговоров:\n${allText}\n\nНайди одну тихую повторяющуюся тему. Ответ 2-3 предложения.`;
-    const text = await callClaude([{role:'user', content: prompt}], VERA_SYSTEM);
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
     addMessage('vera', text);
