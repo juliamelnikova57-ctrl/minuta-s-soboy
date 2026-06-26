@@ -58,6 +58,15 @@
     color: var(--text);
   }
 
+  .topbar-tagline {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: -0.2rem;
+  }
+
   .topbar-nav { display: flex; gap: 1.5rem; }
 
   .nav-btn {
@@ -478,6 +487,7 @@
 <div id="home" class="screen active">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
+    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
@@ -508,6 +518,7 @@
 <div id="history" class="screen">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
+    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
@@ -928,6 +939,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
