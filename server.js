@@ -9,65 +9,70 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Кэш слова дня — хранится в памяти сервера
-let todayCache = { date: null, data: null };
-
-// Структура метафорических карт по категориям
+// Структура метафорических карт по категориям.
+// Каждая категория несёт свой круг подходящих слов и вопросов —
+// так слово и вопрос никогда не разойдутся по смыслу с образом,
+// но при этом не привязаны жёстко к одной конкретной картинке.
 const CARD_CATEGORIES = {
   "put-i-vybor": {
     title: "Путь и выбор",
+    words: ["Преддверие", "Развилка", "Перепутье", "Порог", "Направление", "Распутье", "Зов"],
     questions: [
-      "Куда я сейчас иду?",
-      "Что хочу оставить позади?",
-      "Какой выбор давно ждёт внимания?",
-      "Что помогает двигаться дальше?"
+      "Что в этой картине первым останавливает взгляд?",
+      "Куда тянет двинуться, если довериться этому образу?",
+      "Что осталось бы позади, если шагнуть туда?",
+      "Что в этом откликается тебе именно сегодня?"
     ],
     images: ["crossroad.png", "bridge.png", "mountain-path.png", "stone-gate.png"]
   },
   "vnutrennee-sostoyanie": {
     title: "Внутреннее состояние",
+    words: ["Отголосок", "Туман", "Тяжесть", "Гул", "Прилив", "Затишье", "Дрожь"],
     questions: [
-      "Что я сейчас чувствую?",
-      "Что во мне пытается быть замеченным?",
-      "Что я не хочу видеть?",
-      "Что нуждается в принятии?"
+      "Что в этой картине первым останавливает взгляд?",
+      "Что бы ты почувствовала, если бы оказалась внутри этого момента?",
+      "На что похоже это чувство, если дать ему форму?",
+      "Что в этом откликается тебе именно сегодня?"
     ],
     images: ["windy-field.png", "rain.png", "boat.png", "fog-cliff.png"]
   },
   "opora-i-resursy": {
     title: "Опора и ресурсы",
+    words: ["Корень", "Опора", "Убежище", "Тепло", "Почва", "Гнездо", "Якорь"],
     questions: [
-      "На что я могу опереться?",
-      "Что даёт силы?",
-      "Что уже есть в моей жизни?",
-      "Где моя устойчивость?"
+      "Что в этой картине первым останавливает взгляд?",
+      "Что здесь придаёт ощущение устойчивости?",
+      "Что в этом откликается тебе именно сегодня?",
+      "Если бы это место могло говорить — что бы оно сказало?"
     ],
     images: ["tree-roots.png", "rock-flowers.png", "bowl.png", "cottage.png"]
   },
   "otnosheniya-i-granitsy": {
     title: "Отношения и границы",
+    words: ["Близость", "Расстояние", "Нить", "Грань", "Полёт", "Касание", "Свобода"],
     questions: [
-      "Кого я подпускаю близко?",
-      "Где мои границы?",
-      "Что я отдаю другим?",
-      "Что хочу получить взамен?"
+      "Что в этой картине первым останавливает взгляд?",
+      "Кого или что напоминает тебе эта картина?",
+      "Что в этом откликается тебе именно сегодня?",
+      "Что чувствуется здесь — близость или расстояние?"
     ],
     images: ["two-birds.png", "cage.png", "garden-path.png", "dock.png"]
   },
   "rost-i-izmeneniya": {
     title: "Рост и изменения",
+    words: ["Прорастание", "Перемена", "Восход", "Развёртывание", "Созревание", "Перерождение", "Раскрытие"],
     questions: [
-      "Что во мне растёт?",
-      "Что готово измениться?",
-      "Что хочет проявиться?",
-      "Что пора отпустить?"
+      "Что в этой картине первым останавливает взгляд?",
+      "Что здесь меняется, если смотреть дольше?",
+      "Что в этом откликается тебе именно сегодня?",
+      "Что бы выросло, если дать этому время?"
     ],
     images: ["sunset-valley.png", "stairs-clouds.png", "eagle-fog.png", "flower-rocks.png"]
   }
 };
 
-// Кэш карты дня
-let cardCache = { date: null, data: null };
+// Кэш дня — одна и та же карта, слово, образ и вопрос для всех в этот день
+let todayCache = { date: null, data: null };
 
 function pickDailyItem(array, seedString) {
   // Простой детерминированный выбор по дате — одно и то же значение для всех в этот день
@@ -104,28 +109,32 @@ function anthropicRequest(body) {
   });
 }
 
-// Слово дня — одно для всех, генерируется по дате
+// Главная практика дня — карта, слово (из круга категории), природный образ под это слово, и вопрос.
+// Всё одно для всех пользователей в этот день, выбирается детерминированно по дате.
 app.get('/api/today', async (req, res) => {
   const API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
   const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Если кэш свежий — отдаём сразу
   if (todayCache.date === today && todayCache.data) {
     return res.json(todayCache.data);
   }
 
   try {
-    const prompt = `Сегодняшняя дата: ${today}. На основе этой даты сгенерируй для дневника рефлексии:
-1. Одно русское слово (существительное) которое несёт глубину и может открыть рефлексию. Не банальное. Каждый день слово должно быть разным — дата определяет выбор.
-2. Короткий образ из природы (2-3 предложения, максимум 40 слов). Тихий, поэтичный, без морали.
-3. Один вопрос для рефлексии (не более 15 слов). Про сейчас. Открытый.
-Ответь строго JSON без markdown: {"word":"...","nature":"...","question":"..."}`;
+    const categoryKeys = Object.keys(CARD_CATEGORIES);
+    const categoryKey = pickDailyItem(categoryKeys, today + '-category');
+    const category = CARD_CATEGORIES[categoryKey];
+
+    const image = pickDailyItem(category.images, today + '-image');
+    const word = pickDailyItem(category.words, today + '-word');
+    const question = pickDailyItem(category.questions, today + '-question');
+
+    const prompt = `Слово дня — "${word}". Напиши короткий образ из природы (2-3 предложения, максимум 40 слов), который раскрывает это слово. Тихий, поэтичный, без морали. Ответь строго JSON без markdown: {"nature":"..."}`;
 
     const result = await anthropicRequest({
       model: 'claude-sonnet-4-5',
-      max_tokens: 300,
+      max_tokens: 200,
       system: 'Ты создаёшь поэтичный контент для дневника рефлексии. Отвечаешь только JSON без markdown.',
       messages: [{ role: 'user', content: prompt }]
     });
@@ -137,8 +146,16 @@ app.get('/api/today', async (req, res) => {
 
     const parsed = JSON.parse(result.body);
     const text = parsed.content[0].text.replace(/```json|```/g, '').trim();
-    const data = JSON.parse(text);
-    data.date = today;
+    const { nature } = JSON.parse(text);
+
+    const data = {
+      date: today,
+      category: category.title,
+      image: `/cards/${categoryKey}/${image}`,
+      word,
+      nature,
+      question
+    };
 
     todayCache = { date: today, data };
     res.json(data);
@@ -147,33 +164,6 @@ app.get('/api/today', async (req, res) => {
     console.error('Today generation error:', e.message);
     res.status(500).json({ error: e.message });
   }
-});
-
-// Чат с Верой
-// Карта дня — выбирается детерминированно по дате, одна для всех
-app.get('/api/card', (req, res) => {
-  const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-
-  if (cardCache.date === today && cardCache.data) {
-    return res.json(cardCache.data);
-  }
-
-  const categoryKeys = Object.keys(CARD_CATEGORIES);
-  const categoryKey = pickDailyItem(categoryKeys, today + '-category');
-  const category = CARD_CATEGORIES[categoryKey];
-
-  const image = pickDailyItem(category.images, today + '-image');
-  const question = pickDailyItem(category.questions, today + '-question');
-
-  const data = {
-    date: today,
-    category: category.title,
-    image: `/cards/${categoryKey}/${image}`,
-    question
-  };
-
-  cardCache = { date: today, data };
-  res.json(data);
 });
 
 app.post('/api/chat', (req, res) => {
@@ -221,6 +211,6 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Вера запущена на порту ${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
   console.log('API_KEY задан:', !!process.env.ANTHROPIC_API_KEY);
 });
