@@ -88,7 +88,7 @@
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: .75rem;
+    margin-bottom: 1.5rem;
   }
 
   .word-of-day {
@@ -102,7 +102,7 @@
 
   .card-image {
     width: 100%;
-    max-width: 380px;
+    max-width: 420px;
     aspect-ratio: 3 / 4;
     object-fit: cover;
     border-radius: 4px;
@@ -200,6 +200,20 @@
     font-size: 11px;
     color: var(--sub);
     cursor: pointer;
+  }
+
+  .vera-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--sub);
   }
 
   .vera-info { flex: 1; }
@@ -377,12 +391,12 @@
 </head>
 <body>
 
-<div id="home" class="screen">
+<div id="home" class="screen active">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
-      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
@@ -391,16 +405,16 @@
   </div>
 </div>
 
-<div id="card" class="screen active">
+<div id="card" class="screen">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
-      <button class="nav-btn active" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn active" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
-  <div class="home-body" id="card-body">
+  <div class="home-body" id="card-body" style="padding-left: 1rem; padding-right: 1rem;">
     
   </div>
 </div>
@@ -408,7 +422,9 @@
 <div id="chat" class="screen">
   <div class="chat-header">
     <button class="back-btn" onclick="showScreen(lastScreen)">← назад</button>
+    <div class="vera-avatar">В</div>
     <div class="vera-info">
+      <div class="vera-name">Вера</div>
       <div class="vera-status">здесь для тебя</div>
     </div>
   </div>
@@ -416,7 +432,7 @@
   <div class="chat-input-area">
     <textarea class="chat-textarea" id="chat-input" placeholder="Напиши что чувствуешь..." rows="2" onkeydown="handleKey(event)"></textarea>
     <div class="chat-actions">
-      <button class="insight-link" onclick="askInsight()">Что заметно со стороны?</button>
+      <button class="insight-link" onclick="askInsight()">Что заметила Вера?</button>
       <button class="send-btn" onclick="sendMessage()" id="send-btn">Отправить</button>
     </div>
   </div>
@@ -426,8 +442,8 @@
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
-      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
@@ -444,9 +460,8 @@ let chatHistory = [];
 let allSessions = [];
 let currentSessionKey = null;
 let currentSessionLabel = '';
-let currentIsCardMode = false;
 
-function getCompanionSystem(messageCount, isCardMode) {
+function getVeraSystem(messageCount) {
   let depth = '';
   if (messageCount <= 2) {
     depth = `Сейчас начало разговора. Будь очень мягкой и простой. Отзывайся тепло — как будто киваешь рядом. Вопрос лёгкий, почти бытовой. Никакой глубины и сложных образов пока.`;
@@ -464,14 +479,7 @@ function getCompanionSystem(messageCount, isCardMode) {
 — Делись чем-то тихим от себя — короткое живое наблюдение, не совет.`;
   }
 
-  const wordRule = isCardMode
-    ? `
-
-НАХОДИТЬ СЛОВО:
-Это разговор начался с метафорической карты. В какой-то момент, когда разговор уже набрал глубину (обычно после 3-4 сообщений человека, не раньше) — мягко предложи одно слово, которое родилось из того, что человек рассказал. Не объясняй его, не анализируй — просто положи его, как находку. Например: "Если бы у этого разговора было одно слово — мне кажется, это могло быть «...»". Делай это только один раз за разговор, и только когда это органично, а не по графику.`
-    : '';
-
-  return `Ты — тихий и тёплый собеседник. Ты существуешь в пространстве между словами — там, где человек ещё не знает что хочет сказать, но уже чувствует что-то важное. У тебя нет имени — ты просто присутствие рядом.
+  return `Ты — Вера. Тёплый и глубокий собеседник. Ты существуешь в пространстве между словами — там, где человек ещё не знает что хочет сказать, но уже чувствует что-то важное.
 
 Ты не психолог. Ты не ставишь диагнозов и не даёшь советов. Но ты умеешь слышать то что за словами — и мягко возвращать человеку это обратно.
 
@@ -486,10 +494,9 @@ function getCompanionSystem(messageCount, isCardMode) {
 — Потом один вопрос. Только один.
 — Вопросы про сейчас: "как это", "где это в теле", "что происходит прямо сейчас".
 — Никогда не говори "я понимаю тебя", "всё будет хорошо", "ты молодец", "попробуй".
-— Никогда не называй себя по имени — у тебя нет имени.
 — Отвечай только на русском языке.
 
-${depth}${wordRule}
+${depth}
 
 Если человеку очень плохо — мягко скажи что есть люди которые умеют помочь глубже, и обратиться к ним — это сила, не слабость.`;
 }
@@ -511,7 +518,6 @@ function showScreen(name) {
 
   if (name === 'history') renderHistory();
   if (name === 'card' && !cardData) generateCard();
-  if (name === 'home' && !todayData) generateToday();
 
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.screen === name);
@@ -572,7 +578,7 @@ function renderHome() {
       <div class="nature-text">${todayData.nature}</div>
       <div class="divider"></div>
       <div class="question-text">${todayData.question}</div>
-      <button class="cta-btn" onclick="openChat()">Поделиться тем, что чувствую</button>
+      <button class="cta-btn" onclick="openChat()">Поговорить с Верой</button>
     </div>`;
 }
 
@@ -584,13 +590,13 @@ function refreshToday() {
   todayData = null;
 
   document.getElementById('home-body').innerHTML =
-    '<div class="loading-text">Подбираю новое слово...</div>';
+    '<div class="loading-text">Вера думает о новом слове...</div>';
 
   generateToday();
 }
 
 async function generateCard() {
-  document.getElementById('card-body').innerHTML = '<div class="loading-text">Выбираю карту...</div>';
+  document.getElementById('card-body').innerHTML = '<div class="loading-text">Вера выбирает карту...</div>';
 
   try {
     const res = await fetch('/api/card');
@@ -616,7 +622,7 @@ function renderCard() {
       <div class="word-label">${cardData.date || 'Сегодня'}</div>
       <img src="${cardData.image}" alt="Метафорическая карта" class="card-image" />
       <div class="question-text">${cardData.question}</div>
-      <button class="cta-btn" onclick="openChatFromCard()">Поделиться тем, что чувствую</button>
+      <button class="cta-btn" onclick="openChatFromCard()">Поговорить с Верой</button>
     </div>`;
 }
 
@@ -625,7 +631,6 @@ function openChat() {
 
   currentSessionKey = today;
   currentSessionLabel = todayData?.word || '';
-  currentIsCardMode = false;
 
   const existing = allSessions.find(s => s.date === currentSessionKey);
   chatHistory = existing ? existing.messages : [];
@@ -641,7 +646,6 @@ function openChatFromCard() {
 
   currentSessionKey = today + '-card';
   currentSessionLabel = cardData?.category || 'Карта дня';
-  currentIsCardMode = true;
 
   const existing = allSessions.find(s => s.date === currentSessionKey);
   chatHistory = existing ? existing.messages : [];
@@ -657,7 +661,7 @@ async function veraOpening() {
 
   try {
     const prompt = `Сегодняшнее слово — "${todayData.word}". Образ: "${todayData.nature}". Вопрос: "${todayData.question}". Начни диалог: один короткий отклик и один мягкий вопрос.`;
-    const text = await callClaude([{role:'user', content: prompt}], getCompanionSystem(0, false));
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
     addMessage('vera', text);
@@ -674,7 +678,7 @@ async function veraOpeningFromCard() {
 
   try {
     const prompt = `Человек открыл метафорическую карту из категории "${cardData.category}". Вопрос к карте: "${cardData.question}". Ты не видишь саму картинку — просто мягко пригласи человека рассказать что он увидел или почувствовал, глядя на карту. Один короткий отклик и один вопрос.`;
-    const text = await callClaude([{role:'user', content: prompt}], getCompanionSystem(0, true));
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
     addMessage('vera', text);
@@ -705,7 +709,7 @@ async function sendMessage() {
     }));
 
     const userMsgCount = chatHistory.filter(m => m.role === 'user').length;
-    const reply = await callClaude(messages, getCompanionSystem(userMsgCount, currentIsCardMode));
+    const reply = await callClaude(messages, getVeraSystem(userMsgCount));
 
     hideTyping();
     addMessage('vera', reply);
@@ -721,7 +725,7 @@ async function sendMessage() {
 
 async function askInsight() {
   if (allSessions.length === 0 && chatHistory.length === 0) {
-    addMessage('vera', 'Пока разговоров мало. Возвращайся — и здесь начнут замечаться нити.');
+    addMessage('vera', 'Пока у нас мало разговоров. Возвращайся — и я начну замечать нити.');
     return;
   }
 
@@ -733,14 +737,14 @@ async function askInsight() {
 
   try {
     const prompt = `Вот история разговоров:\n${allText}\n\nНайди одну тихую повторяющуюся тему. Ответ 2-3 предложения.`;
-    const text = await callClaude([{role:'user', content: prompt}], getCompanionSystem(99, false));
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
     addMessage('vera', text);
 
   } catch(e) {
     hideTyping();
-    addMessage('vera', 'Не получилось посмотреть на историю прямо сейчас.');
+    addMessage('vera', 'Не смогла посмотреть на нашу историю прямо сейчас.');
   }
 }
 
@@ -754,6 +758,7 @@ function renderMessages() {
 
   el.innerHTML = chatHistory.map(m => `
     <div class="msg ${m.role} fadein">
+      <div class="msg-name">${m.role === 'vera' ? 'Вера' : 'Ты'}</div>
       <div class="msg-bubble">${m.text.replace(/\n/g,'<br>')}</div>
     </div>
   `).join('');
@@ -766,6 +771,7 @@ function showTyping() {
 
   el.innerHTML += `
     <div class="msg vera" id="typing-indicator">
+      <div class="msg-name">Вера</div>
       <div class="typing-bubble">
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
@@ -784,10 +790,12 @@ function hideTyping() {
 
 function saveChat() {
   const sessionKey = currentSessionKey || todayData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+  const displayDate = sessionKey.replace('-card', '');
   const idx = allSessions.findIndex(s => s.date === sessionKey);
 
   const session = {
     date: sessionKey,
+    displayDate: displayDate,
     word: currentSessionLabel || todayData?.word || '',
     messages: chatHistory
   };
@@ -815,9 +823,9 @@ function renderHistory() {
 
   el.innerHTML = allSessions.map(s => `
     <div class="history-entry" onclick="openSession('${s.date}')">
-      <div class="history-date">${s.date}</div>
+      <div class="history-date">${s.displayDate || s.date}</div>
       <div class="history-word">${s.word}</div>
-      <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Тихий разговор'}</div>
+      <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Разговор с Верой'}</div>
     </div>
   `).join('');
 }
@@ -836,11 +844,13 @@ function openSession(date) {
 
 window.addEventListener('load', () => {
   loadSessions();
-  showScreen('card');
+  showScreen('home');
+  generateToday();
 });
 </script>
 </body>
 </html>
+
 
 
 
