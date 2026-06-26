@@ -12,6 +12,72 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Кэш слова дня — хранится в памяти сервера
 let todayCache = { date: null, data: null };
 
+// Структура метафорических карт по категориям
+const CARD_CATEGORIES = {
+  "put-i-vybor": {
+    title: "Путь и выбор",
+    questions: [
+      "Куда я сейчас иду?",
+      "Что хочу оставить позади?",
+      "Какой выбор давно ждёт внимания?",
+      "Что помогает двигаться дальше?"
+    ],
+    images: ["crossroad.png", "bridge.png", "mountain-path.png", "stone-gate.png"]
+  },
+  "vnutrennee-sostoyanie": {
+    title: "Внутреннее состояние",
+    questions: [
+      "Что я сейчас чувствую?",
+      "Что во мне пытается быть замеченным?",
+      "Что я не хочу видеть?",
+      "Что нуждается в принятии?"
+    ],
+    images: ["windy-field.png", "rain.png", "boat.png", "fog-cliff.png"]
+  },
+  "opora-i-resursy": {
+    title: "Опора и ресурсы",
+    questions: [
+      "На что я могу опереться?",
+      "Что даёт силы?",
+      "Что уже есть в моей жизни?",
+      "Где моя устойчивость?"
+    ],
+    images: ["tree-roots.png", "rock-flowers.png", "bowl.png", "cottage.png"]
+  },
+  "otnosheniya-i-granitsy": {
+    title: "Отношения и границы",
+    questions: [
+      "Кого я подпускаю близко?",
+      "Где мои границы?",
+      "Что я отдаю другим?",
+      "Что хочу получить взамен?"
+    ],
+    images: ["two-birds.png", "cage.png", "garden-path.png", "dock.png"]
+  },
+  "rost-i-izmeneniya": {
+    title: "Рост и изменения",
+    questions: [
+      "Что во мне растёт?",
+      "Что готово измениться?",
+      "Что хочет проявиться?",
+      "Что пора отпустить?"
+    ],
+    images: ["sunset-valley.png", "stairs-clouds.png", "eagle-fog.png", "flower-rocks.png"]
+  }
+};
+
+// Кэш карты дня
+let cardCache = { date: null, data: null };
+
+function pickDailyItem(array, seedString) {
+  // Простой детерминированный выбор по дате — одно и то же значение для всех в этот день
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    hash = (hash * 31 + seedString.charCodeAt(i)) >>> 0;
+  }
+  return array[hash % array.length];
+}
+
 function anthropicRequest(body) {
   return new Promise((resolve, reject) => {
     const API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -84,6 +150,32 @@ app.get('/api/today', async (req, res) => {
 });
 
 // Чат с Верой
+// Карта дня — выбирается детерминированно по дате, одна для всех
+app.get('/api/card', (req, res) => {
+  const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  if (cardCache.date === today && cardCache.data) {
+    return res.json(cardCache.data);
+  }
+
+  const categoryKeys = Object.keys(CARD_CATEGORIES);
+  const categoryKey = pickDailyItem(categoryKeys, today + '-category');
+  const category = CARD_CATEGORIES[categoryKey];
+
+  const image = pickDailyItem(category.images, today + '-image');
+  const question = pickDailyItem(category.questions, today + '-question');
+
+  const data = {
+    date: today,
+    category: category.title,
+    image: `/cards/${categoryKey}/${image}`,
+    question
+  };
+
+  cardCache = { date: today, data };
+  res.json(data);
+});
+
 app.post('/api/chat', (req, res) => {
   const API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!API_KEY) {
