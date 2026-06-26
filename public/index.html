@@ -38,8 +38,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
-    padding: 1.5rem 1.5rem 1.1rem;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem 0.8rem;
     border-bottom: 1px solid var(--border);
   }
 
@@ -81,7 +81,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 2rem;
+    padding: 1.25rem 1.5rem;
     text-align: center;
   }
 
@@ -90,54 +90,54 @@
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 1.5rem;
+    margin-bottom: .6rem;
   }
 
   .word-of-day {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 300;
     color: var(--text);
     line-height: 1.1;
-    margin-bottom: 1.5rem;
+    margin-bottom: .6rem;
   }
 
   .card-image {
     width: 100%;
-    max-width: 260px;
+    max-width: 200px;
     aspect-ratio: 3 / 4;
     object-fit: cover;
     border-radius: 4px;
-    margin-bottom: 0.75rem;
+    margin-bottom: .5rem;
     box-shadow: 0 6px 28px rgba(42, 46, 24, 0.08);
   }
 
   .nature-text {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 17px;
+    font-size: 15px;
     font-style: italic;
     font-weight: 300;
     color: var(--sub);
-    line-height: 1.9;
-    margin-bottom: 2rem;
+    line-height: 1.5;
+    margin-bottom: .9rem;
     max-width: 340px;
   }
 
   .question-text {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 400;
     color: var(--text);
-    line-height: 1.6;
-    margin-bottom: 3rem;
+    line-height: 1.4;
+    margin-bottom: 1.1rem;
     max-width: 320px;
   }
 
   .divider {
-    width: 40px;
+    width: 32px;
     height: 1px;
     background: var(--border);
-    margin: 0 auto 3rem;
+    margin: 0 auto .9rem;
   }
 
   .cta-btn, .send-btn {
@@ -153,8 +153,8 @@
   }
 
   .cta-btn {
-    padding: 14px 2.5rem;
-    font-size: 12px;
+    padding: 12px 2rem;
+    font-size: 11px;
   }
 
   .send-btn {
@@ -352,6 +352,64 @@
     font-style: italic;
     color: var(--sub);
     line-height: 1.8;
+  }
+
+  .year-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    letter-spacing: .1em;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .season-block { margin-bottom: 1.5rem; }
+
+  .season-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    margin-bottom: .6rem;
+  }
+
+  .season-months {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+  }
+
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    cursor: pointer;
+  }
+
+  .month-name {
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .month-row.has-entries .month-name { font-weight: 500; }
+
+  .month-count {
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .month-row:not(.has-entries) .month-count { color: var(--border); }
+
+  .month-back-btn {
+    background: none;
+    border: none;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    color: var(--sub);
+    cursor: pointer;
+    padding: 0;
   }
 
   .history-entry {
@@ -736,6 +794,32 @@ function handleKey(e) {
   }
 }
 
+const MONTHS_RU = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const SEASONS = [
+  { name: 'Зима', months: [11, 0, 1], color: '#7A8FA6', line: '#D3DEE8' },
+  { name: 'Весна', months: [2, 3, 4], color: '#5A7A4A', line: '#C9DBB0' },
+  { name: 'Лето', months: [5, 6, 7], color: '#C99A4E', line: '#F0DCAE' },
+  { name: 'Осень', months: [8, 9, 10], color: '#B5703D', line: '#E8C9A8' }
+];
+
+function parseSessionDate(s) {
+  // displayDate выглядит как "26 июня 2026 г." — достаём день, месяц (номер), год
+  const text = (s.displayDate || s.date || '').toLowerCase();
+  const match = text.match(/(\d{1,2})\s+([а-яё]+)\s+(\d{4})/);
+  if (!match) return null;
+
+  const day = parseInt(match[1], 10);
+  const year = parseInt(match[3], 10);
+  const monthWord = match[2];
+
+  const monthIdx = MONTHS_RU.findIndex(m => monthWord.startsWith(m.slice(0, 4)));
+  if (monthIdx === -1) return null;
+
+  return { day, month: monthIdx, year };
+}
+
+let historyView = { level: 'overview', year: null, month: null };
+
 function renderHistory() {
   const el = document.getElementById('history-body');
 
@@ -744,16 +828,78 @@ function renderHistory() {
     return;
   }
 
-  el.innerHTML = allSessions.map(s => `
-    <div class="history-entry" onclick="openSession('${s.date}')">
-      ${s.image ? `<img src="${s.image}" alt="" class="history-thumb" />` : ''}
-      <div class="history-text">
-        <div class="history-date">${s.displayDate || s.date}</div>
-        <div class="history-word">${s.word}</div>
-        <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Тихий разговор'}</div>
-      </div>
-    </div>
-  `).join('');
+  const currentYear = new Date().getFullYear();
+  if (historyView.level === 'overview') {
+    historyView = { level: 'overview', year: currentYear, month: null };
+    renderHistoryOverview(el, currentYear);
+  } else if (historyView.level === 'month') {
+    renderHistoryMonth(el, historyView.year, historyView.month);
+  }
+}
+
+function renderHistoryOverview(el, year) {
+  const parsed = allSessions.map(s => ({ s, p: parseSessionDate(s) })).filter(x => x.p);
+
+  const seasonsHtml = SEASONS.map(season => {
+    const monthsHtml = season.months.map(monthIdx => {
+      const count = parsed.filter(x => x.p.year === year && x.p.month === monthIdx).length;
+      const label = count > 0 ? `${count} ${count === 1 ? 'запись' : 'записи'}` : 'нет записей';
+      return `
+        <div class="month-row ${count > 0 ? 'has-entries' : ''}" onclick="openMonth(${year}, ${monthIdx})">
+          <span class="month-name">${MONTHS_RU[monthIdx].charAt(0).toUpperCase() + MONTHS_RU[monthIdx].slice(1)}</span>
+          <span class="month-count">${label}</span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="season-block">
+        <div class="season-title" style="color:${season.color}">${season.name}</div>
+        <div class="season-months" style="border-left-color:${season.line}">${monthsHtml}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="year-label">${year}</div>
+    ${seasonsHtml}
+  `;
+}
+
+function openMonth(year, month) {
+  historyView = { level: 'month', year, month };
+  renderHistory();
+}
+
+function backToOverview() {
+  historyView = { level: 'overview', year: null, month: null };
+  renderHistory();
+}
+
+function renderHistoryMonth(el, year, month) {
+  const sessionsThisMonth = allSessions.filter(s => {
+    const p = parseSessionDate(s);
+    return p && p.year === year && p.month === month;
+  });
+
+  const monthTitle = MONTHS_RU[month].charAt(0).toUpperCase() + MONTHS_RU[month].slice(1);
+
+  const listHtml = sessionsThisMonth.length === 0
+    ? `<div class="history-empty" style="padding: 2rem 0;">Здесь пока пусто.</div>`
+    : sessionsThisMonth.map(s => `
+        <div class="history-entry" onclick="openSession('${s.date}')">
+          ${s.image ? `<img src="${s.image}" alt="" class="history-thumb" />` : ''}
+          <div class="history-text">
+            <div class="history-date">${s.displayDate || s.date}</div>
+            <div class="history-word">${s.word}</div>
+            <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Тихий разговор'}</div>
+          </div>
+        </div>
+      `).join('');
+
+  el.innerHTML = `
+    <button class="month-back-btn" onclick="backToOverview()">← ${year}</button>
+    <div class="year-label" style="margin-top: 0.5rem;">${monthTitle}</div>
+    ${listHtml}
+  `;
 }
 
 function openSession(date) {
@@ -776,6 +922,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
