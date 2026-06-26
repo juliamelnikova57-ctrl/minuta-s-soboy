@@ -100,6 +100,16 @@
     margin-bottom: 2rem;
   }
 
+  .card-image {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 24px rgba(42, 46, 24, 0.12);
+  }
+
   .nature-text {
     font-family: 'Cormorant Garamond', serif;
     font-size: 17px;
@@ -385,8 +395,9 @@
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
-      <button class="nav-btn active" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn secondary" onclick="showScreen('history')">Дневник</button>
+      <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
+      <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
   <div class="home-body" id="home-body">
@@ -394,9 +405,23 @@
   </div>
 </div>
 
+<div id="card" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">Минута с собой</div>
+    <div class="topbar-nav">
+      <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn active" data-screen="card" onclick="showScreen('card')">Карта</button>
+      <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
+    </div>
+  </div>
+  <div class="home-body" id="card-body">
+    
+  </div>
+</div>
+
 <div id="chat" class="screen">
   <div class="chat-header">
-    <button class="back-btn" onclick="showScreen('home')">← назад</button>
+    <button class="back-btn" onclick="showScreen(lastScreen)">← назад</button>
     <div class="vera-avatar">В</div>
     <div class="vera-info">
       <div class="vera-name">Вера</div>
@@ -417,8 +442,9 @@
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
-      <button class="nav-btn" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn active" onclick="showScreen('history')">Дневник</button>
+      <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
+      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
+      <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
   <div class="history-body" id="history-body"></div>
@@ -428,8 +454,12 @@
 const API_URL = '/api/chat';
 
 let todayData = null;
+let cardData = null;
+let lastScreen = 'home';
 let chatHistory = [];
 let allSessions = [];
+let currentSessionKey = null;
+let currentSessionLabel = '';
 
 function getVeraSystem(messageCount) {
   let depth = '';
@@ -481,17 +511,16 @@ function saveSessions() {
 }
 
 function showScreen(name) {
+  if (name !== 'chat') lastScreen = name;
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(name).classList.add('active');
 
   if (name === 'history') renderHistory();
+  if (name === 'card' && !cardData) generateCard();
 
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => {
-    if ((name === 'home' && b.textContent === 'Сегодня') ||
-        (name === 'history' && b.textContent === 'История')) {
-      b.classList.add('active');
-    }
+    b.classList.toggle('active', b.dataset.screen === name);
   });
 }
 
@@ -566,16 +595,65 @@ function refreshToday() {
   generateToday();
 }
 
+async function generateCard() {
+  document.getElementById('card-body').innerHTML = '<div class="loading-text">Вера выбирает карту...</div>';
+
+  try {
+    const res = await fetch('/api/card');
+    if (!res.ok) throw new Error('Server error');
+    cardData = await res.json();
+    renderCard();
+  } catch(e) {
+    document.getElementById('card-body').innerHTML =
+      `<div style="text-align:center;color:var(--sub);font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;line-height:1.8">
+        Что-то пошло не так.<br>Попробуй обновить страницу.<br><br>
+        <button onclick="generateCard()" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;border-bottom:1px solid var(--border);padding-bottom:2px;">
+          Попробовать снова
+        </button>
+      </div>`;
+  }
+}
+
+function renderCard() {
+  if (!cardData) return;
+
+  document.getElementById('card-body').innerHTML = `
+    <div class="fadein" style="display:flex;flex-direction:column;align-items:center;width:100%;text-align:center">
+      <div class="word-label">${cardData.date || 'Сегодня'}</div>
+      <img src="${cardData.image}" alt="Метафорическая карта" class="card-image" />
+      <div class="question-text">${cardData.question}</div>
+      <button class="cta-btn" onclick="openChatFromCard()">Поговорить с Верой</button>
+    </div>`;
+}
+
 function openChat() {
   const today = todayData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
-  const existing = allSessions.find(s => s.date === today);
 
+  currentSessionKey = today;
+  currentSessionLabel = todayData?.word || '';
+
+  const existing = allSessions.find(s => s.date === currentSessionKey);
   chatHistory = existing ? existing.messages : [];
 
   showScreen('chat');
   renderMessages();
 
   if (chatHistory.length === 0) veraOpening();
+}
+
+function openChatFromCard() {
+  const today = cardData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+
+  currentSessionKey = today + '-card';
+  currentSessionLabel = cardData?.category || 'Карта дня';
+
+  const existing = allSessions.find(s => s.date === currentSessionKey);
+  chatHistory = existing ? existing.messages : [];
+
+  showScreen('chat');
+  renderMessages();
+
+  if (chatHistory.length === 0) veraOpeningFromCard();
 }
 
 async function veraOpening() {
@@ -592,6 +670,23 @@ async function veraOpening() {
   } catch(e) {
     hideTyping();
     addMessage('vera', 'Я здесь. Как ты сейчас?');
+  }
+}
+
+async function veraOpeningFromCard() {
+  showTyping();
+
+  try {
+    const prompt = `Человек открыл метафорическую карту из категории "${cardData.category}". Вопрос к карте: "${cardData.question}". Ты не видишь саму картинку — просто мягко пригласи человека рассказать что он увидел или почувствовал, глядя на карту. Один короткий отклик и один вопрос.`;
+    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
+
+    hideTyping();
+    addMessage('vera', text);
+    saveChat();
+
+  } catch(e) {
+    hideTyping();
+    addMessage('vera', 'Я здесь. Что ты видишь на этой карте?');
   }
 }
 
@@ -694,12 +789,12 @@ function hideTyping() {
 }
 
 function saveChat() {
-  const today = todayData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
-  const idx = allSessions.findIndex(s => s.date === today);
+  const sessionKey = currentSessionKey || todayData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+  const idx = allSessions.findIndex(s => s.date === sessionKey);
 
   const session = {
-    date: today,
-    word: todayData?.word || '',
+    date: sessionKey,
+    word: currentSessionLabel || todayData?.word || '',
     messages: chatHistory
   };
 
@@ -737,6 +832,9 @@ function openSession(date) {
   const session = allSessions.find(s => s.date === date);
   if (!session) return;
 
+  currentSessionKey = session.date;
+  currentSessionLabel = session.word || '';
+
   chatHistory = session.messages;
   showScreen('chat');
   renderMessages();
@@ -750,6 +848,7 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
+
 
 
 
