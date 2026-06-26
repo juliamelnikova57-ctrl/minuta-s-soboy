@@ -488,6 +488,7 @@
 <div id="home" class="screen active">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
+    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
@@ -518,7 +519,7 @@
 <div id="history" class="screen">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
-    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
+    <div class="topbar-tagline">Место, где день начинается с себя</div>
     <div class="topbar-nav">
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
@@ -819,6 +820,8 @@ const SEASONS = [
   { name: 'Осень', months: [8, 9, 10], color: '#B5703D', line: '#E8C9A8' }
 ];
 
+const MONTH_ROOTS_RU = ['янв','февр','март','апрел','ма','июн','июл','август','сентябр','октябр','ноябр','декабр'];
+
 function parseSessionDate(s) {
   // displayDate выглядит как "26 июня 2026 г." — достаём день, месяц (номер), год
   const text = (s.displayDate || s.date || '').toLowerCase();
@@ -829,7 +832,7 @@ function parseSessionDate(s) {
   const year = parseInt(match[3], 10);
   const monthWord = match[2];
 
-  const monthIdx = MONTHS_RU.findIndex(m => monthWord.startsWith(m.slice(0, 4)));
+  const monthIdx = MONTH_ROOTS_RU.findIndex(root => monthWord.startsWith(root));
   if (monthIdx === -1) return null;
 
   return { day, month: monthIdx, year };
