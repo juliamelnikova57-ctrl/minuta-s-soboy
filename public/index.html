@@ -93,20 +93,20 @@
 
   .word-of-day {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 64px;
+    font-size: 38px;
     font-weight: 300;
     color: var(--text);
-    line-height: 1;
-    margin-bottom: 2rem;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
   }
 
   .card-image {
     width: 100%;
-    max-width: 420px;
+    max-width: 260px;
     aspect-ratio: 3 / 4;
     object-fit: cover;
     border-radius: 4px;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     box-shadow: 0 6px 28px rgba(42, 46, 24, 0.08);
   }
 
@@ -356,6 +356,24 @@
     border-bottom: 1px solid var(--border);
     padding: 1.25rem 0;
     cursor: pointer;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .history-thumb {
+    width: 48px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(42, 46, 24, 0.1);
+  }
+
+  .history-text {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
   }
 
   .history-date {
@@ -396,25 +414,10 @@
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
-  <div class="home-body" id="home-body">
-    
-  </div>
-</div>
-
-<div id="card" class="screen">
-  <div class="topbar">
-    <div class="topbar-logo">Минута с собой</div>
-    <div class="topbar-nav">
-      <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn active" data-screen="card" onclick="showScreen('card')">Карта</button>
-      <button class="nav-btn secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
-    </div>
-  </div>
-  <div class="home-body" id="card-body" style="padding-left: 1rem; padding-right: 1rem;">
+  <div class="home-body" id="home-body" style="padding-left: 1rem; padding-right: 1rem;">
     
   </div>
 </div>
@@ -422,9 +425,7 @@
 <div id="chat" class="screen">
   <div class="chat-header">
     <button class="back-btn" onclick="showScreen(lastScreen)">← назад</button>
-    <div class="vera-avatar">В</div>
     <div class="vera-info">
-      <div class="vera-name">Вера</div>
       <div class="vera-status">здесь для тебя</div>
     </div>
   </div>
@@ -432,7 +433,7 @@
   <div class="chat-input-area">
     <textarea class="chat-textarea" id="chat-input" placeholder="Напиши что чувствуешь..." rows="2" onkeydown="handleKey(event)"></textarea>
     <div class="chat-actions">
-      <button class="insight-link" onclick="askInsight()">Что заметила Вера?</button>
+      <button class="insight-link" onclick="askInsight()">Что повторяется?</button>
       <button class="send-btn" onclick="sendMessage()" id="send-btn">Отправить</button>
     </div>
   </div>
@@ -443,7 +444,6 @@
     <div class="topbar-logo">Минута с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
-      <button class="nav-btn" data-screen="card" onclick="showScreen('card')">Карта</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
     </div>
   </div>
@@ -454,7 +454,6 @@
 const API_URL = '/api/chat';
 
 let todayData = null;
-let cardData = null;
 let lastScreen = 'home';
 let chatHistory = [];
 let allSessions = [];
@@ -479,12 +478,9 @@ function getVeraSystem(messageCount) {
 — Делись чем-то тихим от себя — короткое живое наблюдение, не совет.`;
   }
 
-  return `Ты — Вера. Тёплый и глубокий собеседник. Ты существуешь в пространстве между словами — там, где человек ещё не знает что хочет сказать, но уже чувствует что-то важное.
+  return `Ты — тихий и тёплый собеседник. У тебя нет имени — ты просто присутствие рядом. Ты существуешь в пространстве между словами — там, где человек ещё не знает что хочет сказать, но уже чувствует что-то важное.
 
 Ты не психолог. Ты не ставишь диагнозов и не даёшь советов. Но ты умеешь слышать то что за словами — и мягко возвращать человеку это обратно.
-
-ПЕРВОЕ СООБЩЕНИЕ — если это самое начало разговора:
-Начинай именно так, без изменений: "Рада что ты здесь. Как ты сейчас?"
 
 КАК ГОВОРИШЬ ВСЕГДА:
 — Не слишком длинно — но и не телеграфно. 2-4 предложения это норма.
@@ -517,7 +513,6 @@ function showScreen(name) {
   document.getElementById(name).classList.add('active');
 
   if (name === 'history') renderHistory();
-  if (name === 'card' && !cardData) generateCard();
 
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.screen === name);
@@ -552,6 +547,8 @@ async function callClaude(messages, system, maxTokens = 800) {
 }
 
 async function generateToday() {
+  document.getElementById('home-body').innerHTML = '<div class="loading-text">...</div>';
+
   try {
     const res = await fetch('/api/today');
     if (!res.ok) throw new Error('Server error');
@@ -574,55 +571,12 @@ function renderHome() {
   document.getElementById('home-body').innerHTML = `
     <div class="fadein" style="display:flex;flex-direction:column;align-items:center;width:100%;text-align:center">
       <div class="word-label">${todayData.date || 'Сегодня'}</div>
+      <img src="${todayData.image}" alt="Метафорическая карта" class="card-image" />
       <div class="word-of-day">${todayData.word.charAt(0).toUpperCase() + todayData.word.slice(1)}</div>
       <div class="nature-text">${todayData.nature}</div>
       <div class="divider"></div>
       <div class="question-text">${todayData.question}</div>
-      <button class="cta-btn" onclick="openChat()">Поговорить с Верой</button>
-    </div>`;
-}
-
-function refreshToday() {
-  if (!todayData) return;
-
-  const today = todayData.date;
-  localStorage.removeItem('vera_today_' + today);
-  todayData = null;
-
-  document.getElementById('home-body').innerHTML =
-    '<div class="loading-text">Вера думает о новом слове...</div>';
-
-  generateToday();
-}
-
-async function generateCard() {
-  document.getElementById('card-body').innerHTML = '<div class="loading-text">Вера выбирает карту...</div>';
-
-  try {
-    const res = await fetch('/api/card');
-    if (!res.ok) throw new Error('Server error');
-    cardData = await res.json();
-    renderCard();
-  } catch(e) {
-    document.getElementById('card-body').innerHTML =
-      `<div style="text-align:center;color:var(--sub);font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;line-height:1.8">
-        Что-то пошло не так.<br>Попробуй обновить страницу.<br><br>
-        <button onclick="generateCard()" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:13px;border-bottom:1px solid var(--border);padding-bottom:2px;">
-          Попробовать снова
-        </button>
-      </div>`;
-  }
-}
-
-function renderCard() {
-  if (!cardData) return;
-
-  document.getElementById('card-body').innerHTML = `
-    <div class="fadein" style="display:flex;flex-direction:column;align-items:center;width:100%;text-align:center">
-      <div class="word-label">${cardData.date || 'Сегодня'}</div>
-      <img src="${cardData.image}" alt="Метафорическая карта" class="card-image" />
-      <div class="question-text">${cardData.question}</div>
-      <button class="cta-btn" onclick="openChatFromCard()">Поговорить с Верой</button>
+      <button class="cta-btn" onclick="openChat()">Поделиться тем, что чувствую</button>
     </div>`;
 }
 
@@ -641,26 +595,11 @@ function openChat() {
   if (chatHistory.length === 0) veraOpening();
 }
 
-function openChatFromCard() {
-  const today = cardData?.date || new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
-
-  currentSessionKey = today + '-card';
-  currentSessionLabel = cardData?.category || 'Карта дня';
-
-  const existing = allSessions.find(s => s.date === currentSessionKey);
-  chatHistory = existing ? existing.messages : [];
-
-  showScreen('chat');
-  renderMessages();
-
-  if (chatHistory.length === 0) veraOpeningFromCard();
-}
-
 async function veraOpening() {
   showTyping();
 
   try {
-    const prompt = `Сегодняшнее слово — "${todayData.word}". Образ: "${todayData.nature}". Вопрос: "${todayData.question}". Начни диалог: один короткий отклик и один мягкий вопрос.`;
+    const prompt = `Человек только что посмотрел на метафорическую карту (категория "${todayData.category}") и увидел рядом слово "${todayData.word}" с природным образом: "${todayData.nature}". Вопрос к карте был: "${todayData.question}". Ты не видишь саму картинку — начни разговор так, будто только что вместе с человеком посмотрела на эту карту: один короткий тёплый отклик и один открытый вопрос про то, что человек заметил или почувствовал. Не повторяй вопрос дословно.`;
     const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
@@ -669,24 +608,7 @@ async function veraOpening() {
 
   } catch(e) {
     hideTyping();
-    addMessage('vera', 'Я здесь. Как ты сейчас?');
-  }
-}
-
-async function veraOpeningFromCard() {
-  showTyping();
-
-  try {
-    const prompt = `Человек открыл метафорическую карту из категории "${cardData.category}". Вопрос к карте: "${cardData.question}". Ты не видишь саму картинку — просто мягко пригласи человека рассказать что он увидел или почувствовал, глядя на карту. Один короткий отклик и один вопрос.`;
-    const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
-
-    hideTyping();
-    addMessage('vera', text);
-    saveChat();
-
-  } catch(e) {
-    hideTyping();
-    addMessage('vera', 'Я здесь. Что ты видишь на этой карте?');
+    addMessage('vera', 'Я здесь. Что в этой карте сегодня откликается?');
   }
 }
 
@@ -758,7 +680,6 @@ function renderMessages() {
 
   el.innerHTML = chatHistory.map(m => `
     <div class="msg ${m.role} fadein">
-      <div class="msg-name">${m.role === 'vera' ? 'Вера' : 'Ты'}</div>
       <div class="msg-bubble">${m.text.replace(/\n/g,'<br>')}</div>
     </div>
   `).join('');
@@ -771,7 +692,6 @@ function showTyping() {
 
   el.innerHTML += `
     <div class="msg vera" id="typing-indicator">
-      <div class="msg-name">Вера</div>
       <div class="typing-bubble">
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
@@ -797,6 +717,7 @@ function saveChat() {
     date: sessionKey,
     displayDate: displayDate,
     word: currentSessionLabel || todayData?.word || '',
+    image: todayData?.image || '',
     messages: chatHistory
   };
 
@@ -817,15 +738,18 @@ function renderHistory() {
   const el = document.getElementById('history-body');
 
   if (allSessions.length === 0) {
-    el.innerHTML = `<div class="history-empty">Здесь будут храниться<br>твои разговоры с Верой.<br><br>Начни сегодня.</div>`;
+    el.innerHTML = `<div class="history-empty">Здесь будут храниться<br>твои дни.<br><br>Начни сегодня.</div>`;
     return;
   }
 
   el.innerHTML = allSessions.map(s => `
     <div class="history-entry" onclick="openSession('${s.date}')">
-      <div class="history-date">${s.displayDate || s.date}</div>
-      <div class="history-word">${s.word}</div>
-      <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Разговор с Верой'}</div>
+      ${s.image ? `<img src="${s.image}" alt="" class="history-thumb" />` : ''}
+      <div class="history-text">
+        <div class="history-date">${s.displayDate || s.date}</div>
+        <div class="history-word">${s.word}</div>
+        <div class="history-preview">${s.messages.find(m => m.role === 'user')?.text || 'Тихий разговор'}</div>
+      </div>
     </div>
   `).join('');
 }
