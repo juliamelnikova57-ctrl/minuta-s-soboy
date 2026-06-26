@@ -106,7 +106,7 @@
     aspect-ratio: 3 / 4;
     object-fit: cover;
     border-radius: 4px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
     box-shadow: 0 6px 28px rgba(42, 46, 24, 0.08);
   }
 
@@ -433,7 +433,7 @@
   <div class="chat-input-area">
     <textarea class="chat-textarea" id="chat-input" placeholder="Напиши что чувствуешь..." rows="2" onkeydown="handleKey(event)"></textarea>
     <div class="chat-actions">
-      <button class="insight-link" onclick="askInsight()">Что повторяется?</button>
+      <button class="insight-link" onclick="askInsight()">Что объединяет эти дни?</button>
       <button class="send-btn" onclick="sendMessage()" id="send-btn">Отправить</button>
     </div>
   </div>
@@ -599,7 +599,7 @@ async function veraOpening() {
   showTyping();
 
   try {
-    const prompt = `Человек только что посмотрел на метафорическую карту (категория "${todayData.category}") и увидел рядом слово "${todayData.word}" с природным образом: "${todayData.nature}". Вопрос к карте был: "${todayData.question}". Ты не видишь саму картинку — начни разговор так, будто только что вместе с человеком посмотрела на эту карту: один короткий тёплый отклик и один открытый вопрос про то, что человек заметил или почувствовал. Не повторяй вопрос дословно.`;
+    const prompt = `Человек только что посмотрел на метафорическую карту (категория "${todayData.category}") и увидел рядом слово "${todayData.word}" с природным образом: "${todayData.nature}". На карточке уже был вопрос: "${todayData.question}" — человек открыл разговор именно чтобы ответить на него. Ты не видишь саму картинку. Начни разговор так, будто сидишь рядом и приглашаешь ответить на этот же вопрос — можешь чуть мягче его переформулировать своими словами, но не уводи в сторону и не задавай другой вопрос. Один короткий тёплый отклик на образ, и затем этот же вопрос (своими словами).`;
     const text = await callClaude([{role:'user', content: prompt}], getVeraSystem(0));
 
     hideTyping();
