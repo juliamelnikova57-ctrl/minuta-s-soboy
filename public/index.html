@@ -109,6 +109,14 @@
     margin-bottom: .6rem;
   }
 
+  .image-caption {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: .5rem;
+  }
+
   .word-of-day {
     font-family: 'Cormorant Garamond', serif;
     font-size: 32px;
@@ -519,7 +527,7 @@
 <div id="history" class="screen">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
-    <div class="topbar-tagline">Место, где день начинается с себя</div>
+    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
     <div class="topbar-nav">
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
@@ -649,6 +657,7 @@ function renderHome() {
   document.getElementById('home-body').innerHTML = `
     <div class="fadein" style="display:flex;flex-direction:column;align-items:center;width:100%;text-align:center">
       <div class="word-label">${todayData.date || 'Сегодня'}</div>
+      <div class="image-caption">Образ дня</div>
       <img src="${todayData.image}" alt="Метафорическая карта" class="card-image" />
       <div class="word-of-day">${todayData.word.charAt(0).toUpperCase() + todayData.word.slice(1)}</div>
       <div class="nature-text">${todayData.nature}</div>
@@ -942,7 +951,6 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>
-
 
 
 
