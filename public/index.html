@@ -511,12 +511,12 @@
   <div class="chat-header">
     <button class="back-btn" onclick="showScreen(lastScreen)">← назад</button>
     <div class="vera-info">
-      <div class="vera-status">здесь для тебя</div>
+      <div class="vera-status">Здесь для тебя</div>
     </div>
   </div>
   <div class="messages" id="messages"></div>
   <div class="chat-input-area">
-    <textarea class="chat-textarea" id="chat-input" placeholder="Напиши что чувствуешь..." rows="2" onkeydown="handleKey(event)"></textarea>
+    <textarea class="chat-textarea" id="chat-input" placeholder="Напиши, что чувствуешь..." rows="2" onkeydown="handleKey(event)"></textarea>
     <div class="chat-actions">
       <button class="insight-link" onclick="askInsight()">Что замечаю?</button>
       <button class="send-btn" onclick="sendMessage()" id="send-btn">Отправить</button>
@@ -527,7 +527,7 @@
 <div id="history" class="screen">
   <div class="topbar">
     <div class="topbar-logo">Минута с собой</div>
-    <div class="topbar-tagline">Пространство тишины и встречи с собой</div>
+    <div class="topbar-tagline">Пространство тишины, где день начинается с себя </div>
     <div class="topbar-nav">
       <button class="nav-btn" data-screen="home" onclick="showScreen('home')">Сегодня</button>
       <button class="nav-btn active secondary" data-screen="history" onclick="showScreen('history')">Дневник</button>
